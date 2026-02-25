@@ -60,15 +60,14 @@ message GetStatsRequest {
 }
 
 message GetStatsResponse {
-  int32 project_id = 1;
-  int32 count_total = 2;
-  int32 count_open = 3;
-  int32 count_closed = 4;
-  int32 count_reopened = 5;
-  int32 count_resolved = 6;
-  int32 count_in_progress = 7;
-  float avg_duration_closed = 8;
-  float avg_created_per_day = 9;
+  int32 count_total = 1;
+  int32 count_open = 2;
+  int32 count_closed = 3;
+  int32 count_reopened = 4;
+  int32 count_resolved = 5;
+  int32 count_in_progress = 6;
+  float avg_duration_closed = 7;
+  float avg_created_per_day = 8;
 }
 
 message CompareProjectsRequest {
