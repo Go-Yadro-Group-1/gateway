@@ -2,16 +2,81 @@ syntax = "proto3";
 
 package analyzer.v1;
 
-import "google/protobuf/timestamp.proto";
-
 option go_package = "github.com/Go-Yadro-Group-1/gateway/api/proto/analyzer/v1;analyzerv1";
 
 service AnalyzerService {
-  rpc GetTimeInOpenHistogram(GetTimeInOpenHistogramRequest) returns (GetTimeInOpenHistogramResponse);
-  rpc GetTimeByStateCharts(GetTimeByStateChartsRequest) returns (GetTimeByStateChartsResponse);
-  rpc GetDailyActivityChart(GetDailyActivityChartRequest) returns (GetDailyActivityChartResponse);
+  rpc GetOpenStateHistogram(GetOpenStateHistogramRequest) returns (GetOpenStateHistogramResponse);
+  rpc GetStateDistributionChart(GetStateDistributionChartRequest) returns (GetStateDistributionChartResponse);
   rpc GetComplexityHistogram(GetComplexityHistogramRequest) returns (GetComplexityHistogramResponse);
   rpc GetPriorityChart(GetPriorityChartRequest) returns (GetPriorityChartResponse);
-  rpc GetRawData(GetRawDataRequest) returns (GetRawDataResponse);
+  rpc GetDailyActivityChart(GetDailyActivityChartRequest) returns (GetDailyActivityChartResponse);
+  rpc GetStats(GetStatsRequest) returns (GetStatsResponse);
   rpc CompareProjects(CompareProjectsRequest) returns (CompareProjectsResponse);
+}
+
+message GetOpenStateHistogramRequest {
+  int32 project_id = 1;
+}
+
+message GetOpenStateHistogramResponse {
+  bytes data = 1;
+}
+
+message GetStateDistributionChartRequest {
+  int32 project_id = 1;
+}
+
+message GetStateDistributionChartResponse {
+  bytes  data  = 1;
+  string state = 2;
+}
+
+message GetComplexityHistogramRequest {
+  int32 project_id = 1;
+}
+
+message GetComplexityHistogramResponse {
+  bytes data = 1;
+}
+
+message GetPriorityChartRequest {
+  int32 project_id = 1;
+}
+
+message GetPriorityChartResponse {
+  bytes data = 1;
+}
+
+message GetDailyActivityChartRequest {
+  int32 project_id = 1;
+}
+
+message GetDailyActivityChartResponse {
+  bytes data = 1;
+}
+
+message GetStatsRequest {
+  int32 project_id = 1;
+}
+
+message GetStatsResponse {
+  int32 project_id              = 1;
+  int32 count_total             = 2;
+  int32 count_open              = 3;
+  int32 count_closed            = 4;
+  int32 count_reopened          = 5;
+  int32 count_resolved          = 6;
+  int32 count_in_progress       = 7;
+  int32 total_duration_closed   = 8;
+  int32 count_created_last_week = 9;
+}
+
+message CompareProjectsRequest {
+  int32 project_id_a = 1;
+  int32 project_id_b = 2;
+}
+
+message CompareProjectsResponse {
+  GetStatsResponse project_a = 1;
+  GetStatsResponse project_b = 2;
 }
