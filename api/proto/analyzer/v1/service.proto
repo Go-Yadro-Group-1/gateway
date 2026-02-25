@@ -2,10 +2,16 @@ syntax = "proto3";
 
 package analyzer.v1;
 
+import "google/protobuf/timestamp.proto";
+
 option go_package = "github.com/Go-Yadro-Group-1/gateway/api/proto/analyzer/v1;analyzerv1";
 
 service AnalyzerService {
-    rpc GetStatsByProject(GetStatsByProjectRequest) returns (GetStatsByProjectResponse);
-    rpc CompareProjects(CompareProjectsRequest) returns (CompareProjectsResponse);
-    rpc GetDashboardByProject(GetDashboardByProjectRequest) returns (GetDashboardByProjectResponse);
+  rpc GetTimeInOpenHistogram(GetTimeInOpenHistogramRequest) returns (GetTimeInOpenHistogramResponse);
+  rpc GetTimeByStateCharts(GetTimeByStateChartsRequest) returns (GetTimeByStateChartsResponse);
+  rpc GetDailyActivityChart(GetDailyActivityChartRequest) returns (GetDailyActivityChartResponse);
+  rpc GetComplexityHistogram(GetComplexityHistogramRequest) returns (GetComplexityHistogramResponse);
+  rpc GetPriorityChart(GetPriorityChartRequest) returns (GetPriorityChartResponse);
+  rpc GetRawData(GetRawDataRequest) returns (GetRawDataResponse);
+  rpc CompareProjects(CompareProjectsRequest) returns (CompareProjectsResponse);
 }
