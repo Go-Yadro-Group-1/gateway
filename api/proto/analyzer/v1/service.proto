@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package analyzer.v1;
+
+option go_package = "github.com/Go-Yadro-Group-1/gateway/api/proto/analyzer/v1;analyzerv1";
+
+service AnalyzerService {
+    rpc GetStatsByProject(GetStatsByProjectRequest) returns (GetStatsByProjectResponse);
+    rpc CompareProjects(CompareProjectsRequest) returns (CompareProjectsResponse);
+    rpc GetDashboardByProject(GetDashboardByProjectRequest) returns (GetDashboardByProjectResponse);
+}
