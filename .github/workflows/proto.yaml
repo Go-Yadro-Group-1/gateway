@@ -1,0 +1,55 @@
+name: Proto-Check-Correctness
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "api/proto/**"
+      - "buf.gen.yaml"
+      - "buf.yaml"
+  pull_request:
+    paths:
+      - "api/proto/**"
+      - "buf.gen.yaml"
+      - "buf.yaml"
+
+jobs:
+  lint:
+    name: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: bufbuild/buf-action@v1
+        with:
+          lint: true
+          format: false
+          breaking: false
+          push: false
+
+  generate:
+    name: generate
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ vars.GO_VERSION }}
+
+      - uses: bufbuild/buf-action@v1
+        with:
+          lint: false
+          format: false
+          breaking: false
+          push: false
+
+      - name: Install protoc plugins
+        run: |
+          go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+          go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+
+      - name: Generate
+        run: buf generate
