@@ -27,6 +27,6 @@ jobs:
       - uses: bufbuild/buf-action@v1
         with:
           lint: true
-          format: false
+          format: true
           breaking: false
           push: false
