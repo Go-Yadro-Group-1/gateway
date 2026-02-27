@@ -2,8 +2,6 @@ syntax = "proto3";
 
 package analyzer.v1;
 
-option go_package = "github.com/Go-Yadro-Group-1/gateway/api/proto/analyzer/v1;analyzerv1";
-
 service AnalyzerService {
   rpc GetOpenStateHistogram(GetOpenStateHistogramRequest) returns (GetOpenStateHistogramResponse);
   rpc GetStateDistributionChart(GetStateDistributionChartRequest) returns (GetStateDistributionChartResponse);
