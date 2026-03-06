@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package connector.v1;
+
+service ConnectorService {
+  rpc GetAvailableProjects(GetAvailableProjectsRequest) returns (GetAvailableProjectsResponse);
+  rpc DownloadProject(DownloadProjectRequest) returns (DownloadProjectResponse);
+}
+
+message GetAvailableProjectsRequest {}
+
+message Project {
+  int32 id = 1;
+  string title = 2;
+}
+
+message GetAvailableProjectsResponse {
+  repeated Project projects = 1;
+}
+
+message DownloadProjectRequest {
+  int32 project_id = 1;
+}
+
+message DownloadProjectResponse {}
