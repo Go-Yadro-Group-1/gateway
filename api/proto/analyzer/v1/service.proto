@@ -3,53 +3,26 @@ syntax = "proto3";
 package analyzer.v1;
 
 service AnalyzerService {
-  rpc GetOpenStateHistogram(GetOpenStateHistogramRequest) returns (GetOpenStateHistogramResponse);
-  rpc GetStateDistributionChart(GetStateDistributionChartRequest) returns (GetStateDistributionChartResponse);
-  rpc GetComplexityHistogram(GetComplexityHistogramRequest) returns (GetComplexityHistogramResponse);
-  rpc GetPriorityChart(GetPriorityChartRequest) returns (GetPriorityChartResponse);
-  rpc GetDailyActivityChart(GetDailyActivityChartRequest) returns (GetDailyActivityChartResponse);
+  rpc GetChart(GetChartRequest) returns (GetChartResponse);
   rpc GetStats(GetStatsRequest) returns (GetStatsResponse);
   rpc CompareProjects(CompareProjectsRequest) returns (CompareProjectsResponse);
 }
 
-message GetOpenStateHistogramRequest {
+enum ChartType {
+  CHART_TYPE_UNSPECIFIED = 0;
+  CHART_TYPE_OPEN_STATE_HISTOGRAM = 1;
+  CHART_TYPE_STATE_DISTRIBUTION = 2;
+  CHART_TYPE_COMPLEXITY_HISTOGRAM = 3;
+  CHART_TYPE_PRIORITY = 4;
+  CHART_TYPE_DAILY_ACTIVITY = 5;
+}
+
+message GetChartRequest {
   int32 project_id = 1;
+  ChartType chart_type = 2;
 }
 
-message GetOpenStateHistogramResponse {
-  bytes data = 1;
-}
-
-message GetStateDistributionChartRequest {
-  int32 project_id = 1;
-}
-
-message GetStateDistributionChartResponse {
-  bytes data = 1;
-  string state = 2;
-}
-
-message GetComplexityHistogramRequest {
-  int32 project_id = 1;
-}
-
-message GetComplexityHistogramResponse {
-  bytes data = 1;
-}
-
-message GetPriorityChartRequest {
-  int32 project_id = 1;
-}
-
-message GetPriorityChartResponse {
-  bytes data = 1;
-}
-
-message GetDailyActivityChartRequest {
-  int32 project_id = 1;
-}
-
-message GetDailyActivityChartResponse {
+message GetChartResponse {
   bytes data = 1;
 }
 
@@ -58,6 +31,10 @@ message GetStatsRequest {
 }
 
 message GetStatsResponse {
+  Stats stats = 1;
+}
+
+message Stats {
   int32 count_total = 1;
   int32 count_open = 2;
   int32 count_closed = 3;
@@ -74,6 +51,6 @@ message CompareProjectsRequest {
 }
 
 message CompareProjectsResponse {
-  GetStatsResponse project_a = 1;
-  GetStatsResponse project_b = 2;
+  Stats project_a = 1;
+  Stats project_b = 2;
 }
