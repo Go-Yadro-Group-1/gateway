@@ -1,0 +1,10 @@
+db:
+  host: 127.0.0.1
+  port: 5432
+  user: pguser
+  password: pgpassword
+  dbname: pgdb
+  sslmode: require
+
+app:
+  log_level: "debug"
