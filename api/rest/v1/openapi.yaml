@@ -1,0 +1,510 @@
+openapi: "3.1.0"
+
+info:
+  title: Gateway API
+  version: "1.0.0"
+  description: |
+    API шлюза для работы с проектами Jira: получение списка проектов,
+    загрузка данных, аналитика и сравнение.
+
+servers:
+  - url: /api/v1
+    description: Production
+
+tags:
+  - name: projects
+    description: Управление загруженными проектами
+  - name: connector
+    description: Взаимодействие с Jira
+  - name: analytics
+    description: Аналитика по проектам
+
+# ─────────────────────────────────────────────
+# Общие компоненты
+# ─────────────────────────────────────────────
+components:
+  parameters:
+    ProjectKey:
+      name: project
+      in: query
+      required: true
+      description: Ключ проекта (например, MYPROJ)
+      schema:
+        type: string
+        example: MYPROJ
+
+    ProjectKeys:
+      name: project
+      in: query
+      required: true
+      description: Ключи проектов через запятую (например, PROJ1,PROJ2)
+      schema:
+        type: string
+        example: "PROJ1,PROJ2"
+
+    TaskNumber:
+      name: taskNumber
+      in: path
+      required: true
+      description: Индекс аналитической задачи (0 — дашборды, 1 — статистика, 2 — сравнение)
+      schema:
+        type: integer
+        minimum: 0
+        example: 0
+
+  schemas:
+    # ── Проект (краткое представление) ──────────
+    ProjectSummary:
+      type: object
+      required: [id, key, name, url]
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 42
+        key:
+          type: string
+          example: MYPROJ
+        name:
+          type: string
+          example: My Project
+        url:
+          type: string
+          format: uri
+          example: https://jira.example.com/projects/MYPROJ
+
+    # ── Проект (детальная статистика) ───────────
+    ProjectStats:
+      type: object
+      required:
+        - id
+        - key
+        - name
+        - allIssuesCount
+        - openIssuesCount
+        - closedIssuesCount
+        - resolvedIssuesCount
+        - reopenedIssuesCount
+        - inProgressIssuesCount
+        - averageResolutionTimeDays
+        - averageIssuesPerSprint
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 42
+        key:
+          type: string
+          example: MYPROJ
+        name:
+          type: string
+          example: My Project
+        allIssuesCount:
+          type: integer
+          example: 500
+        openIssuesCount:
+          type: integer
+          example: 120
+        closedIssuesCount:
+          type: integer
+          example: 300
+        resolvedIssuesCount:
+          type: integer
+          example: 60
+        reopenedIssuesCount:
+          type: integer
+          example: 15
+        inProgressIssuesCount:
+          type: integer
+          example: 5
+        averageResolutionTimeDays:
+          type: number
+          format: float
+          description: Среднее время закрытия задачи в днях
+          example: 3.7
+        averageIssuesPerSprint:
+          type: number
+          format: float
+          description: Среднее количество задач на спринт
+          example: 24.5
+
+    # ── Проект из Jira (с флагом загруженности) ─
+    JiraProject:
+      allOf:
+        - $ref: "#/components/schemas/ProjectSummary"
+        - type: object
+          required: [existence]
+          properties:
+            existence:
+              type: boolean
+              description: true — проект уже загружен в БД
+              example: false
+
+    # ── Пагинация ────────────────────────────────
+    PageInfo:
+      type: object
+      required: [currentPage, pageCount, totalCount]
+      properties:
+        currentPage:
+          type: integer
+          example: 1
+        pageCount:
+          type: integer
+          description: Общее количество страниц
+          example: 10
+        totalCount:
+          type: integer
+          description: Общее количество элементов
+          example: 97
+
+    # ── Результат аналитической задачи ──────────
+    AnalyticsResult:
+      type: object
+      required: [taskNumber, projectKey, status, data]
+      properties:
+        taskNumber:
+          type: integer
+          example: 0
+        projectKey:
+          type: string
+          example: MYPROJ
+        status:
+          type: string
+          enum: [pending, running, done, failed]
+          example: done
+        data:
+          type: object
+          description: Произвольная структура данных, зависит от типа задачи
+          additionalProperties: true
+
+    # ── Статус аналитики ─────────────────────────
+    AnalyzedStatus:
+      type: object
+      required: [projectKey, isAnalyzed]
+      properties:
+        projectKey:
+          type: string
+          example: MYPROJ
+        isAnalyzed:
+          type: boolean
+          example: true
+
+    # ── Ошибка ───────────────────────────────────
+    Error:
+      type: object
+      required: [code, message]
+      properties:
+        code:
+          type: string
+          example: NOT_FOUND
+        message:
+          type: string
+          example: Project not found
+
+  responses:
+    NotFound:
+      description: Ресурс не найден
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            code: NOT_FOUND
+            message: Project not found
+
+    BadRequest:
+      description: Некорректный запрос
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            code: BAD_REQUEST
+            message: Invalid parameter value
+
+    InternalError:
+      description: Внутренняя ошибка сервера
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            code: INTERNAL_ERROR
+            message: Unexpected error occurred
+
+# ─────────────────────────────────────────────
+# Маршруты
+# ─────────────────────────────────────────────
+paths:
+
+  # ════════════════════════════════════════════
+  # PROJECTS — загруженные проекты
+  # ════════════════════════════════════════════
+
+  /projects:
+    get:
+      tags: [projects]
+      summary: Список загруженных проектов
+      operationId: listProjects
+      responses:
+        "200":
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProjectSummary"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /projects/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: integer
+          format: int64
+          minimum: 1
+        example: 42
+
+    get:
+      tags: [projects]
+      summary: Сухая статистика проекта по ID
+      operationId: getProjectStats
+      responses:
+        "200":
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectStats"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    delete:
+      tags: [projects]
+      summary: Удаление проекта из БД
+      operationId: deleteProject
+      responses:
+        "204":
+          description: Проект успешно удалён
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  # ════════════════════════════════════════════
+  # CONNECTOR — интеграция с Jira
+  # ════════════════════════════════════════════
+
+  /connector/projects:
+    get:
+      tags: [connector]
+      summary: Список проектов из Jira с пагинацией
+      operationId: listJiraProjects
+      parameters:
+        - name: page
+          in: query
+          description: Номер страницы (начиная с 1)
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+          example: 1
+        - name: limit
+          in: query
+          description: Количество проектов на странице
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+          example: 20
+        - name: search
+          in: query
+          description: Фильтр по имени или ключу проекта
+          schema:
+            type: string
+          example: "MY"
+      responses:
+        "200":
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [projects, pageInfo]
+                properties:
+                  projects:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/JiraProject"
+                  pageInfo:
+                    $ref: "#/components/schemas/PageInfo"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /connector/projects/sync:
+    post:
+      tags: [connector]
+      summary: Загрузка или обновление проекта из Jira по ключу
+      operationId: syncProject
+      parameters:
+        - $ref: "#/components/parameters/ProjectKey"
+      responses:
+        "202":
+          description: Синхронизация поставлена в очередь
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [projectKey, message]
+                properties:
+                  projectKey:
+                    type: string
+                    example: MYPROJ
+                  message:
+                    type: string
+                    example: Sync started
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  # ════════════════════════════════════════════
+  # ANALYTICS — аналитические задачи
+  # ════════════════════════════════════════════
+
+  /analytics/status:
+    get:
+      tags: [analytics]
+      summary: Проверка — есть ли хотя бы одна выполненная аналитическая задача
+      operationId: getAnalyzedStatus
+      parameters:
+        - $ref: "#/components/parameters/ProjectKey"
+      responses:
+        "200":
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnalyzedStatus"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /analytics/tasks/{taskNumber}:
+    parameters:
+      - $ref: "#/components/parameters/TaskNumber"
+
+    get:
+      tags: [analytics]
+      summary: Результат аналитической задачи для одного проекта
+      description: |
+        Возвращает результат задачи с индексом `taskNumber`:
+        - `0` — дашборды
+        - `1` — сухая статистика
+        - `2` — сравнение проектов (для одного)
+      operationId: getAnalyticsTask
+      parameters:
+        - $ref: "#/components/parameters/ProjectKey"
+      responses:
+        "200":
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AnalyticsResult"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+    post:
+      tags: [analytics]
+      summary: Запуск аналитической задачи для проекта
+      operationId: runAnalyticsTask
+      parameters:
+        - $ref: "#/components/parameters/ProjectKey"
+      responses:
+        "202":
+          description: Задача поставлена в очередь
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [taskNumber, projectKey, message]
+                properties:
+                  taskNumber:
+                    type: integer
+                    example: 0
+                  projectKey:
+                    type: string
+                    example: MYPROJ
+                  message:
+                    type: string
+                    example: Task queued
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /analytics/tasks:
+    delete:
+      tags: [analytics]
+      summary: Удаление всех аналитических задач проекта
+      operationId: deleteAnalyticsTasks
+      parameters:
+        - $ref: "#/components/parameters/ProjectKey"
+      responses:
+        "204":
+          description: Все задачи удалены
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalError"
+
+  /analytics/compare/{taskNumber}:
+    parameters:
+      - $ref: "#/components/parameters/TaskNumber"
+
+    get:
+      tags: [analytics]
+      summary: Сравнение нескольких проектов по аналитической задаче
+      description: |
+        Запускает задачу с индексом `taskNumber` для нескольких проектов.
+        Ключи проектов передаются через запятую в параметре `project`.
+      operationId: compareProjects
+      parameters:
+        - $ref: "#/components/parameters/ProjectKeys"
+      responses:
+        "200":
+          description: Успешный ответ
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [taskNumber, results]
+                properties:
+                  taskNumber:
+                    type: integer
+                    example: 2
+                  results:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/AnalyticsResult"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalError"
