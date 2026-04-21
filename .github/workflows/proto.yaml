@@ -11,19 +11,24 @@ on:
       - "api/proto/**"
 
 jobs:
-  lint:
+  buf-checks:
     name: buf-checks
     runs-on: ubuntu-latest
     permissions:
       contents: read
       pull-requests: write
+    defaults:
+      run:
+        working-directory: api/proto
     steps:
       - uses: actions/checkout@v4
 
       - uses: bufbuild/buf-action@v1
         with:
-          input: api/proto
-          lint: true
-          format: true
-          breaking: false
-          push: false
+          setup_only: true
+
+      - name: lint
+        run: buf lint
+
+      - name: format
+        run: buf format --diff --exit-code
