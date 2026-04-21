@@ -1,0 +1,183 @@
+syntax = "proto3";
+
+package gateway.v1;
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+
+// ─────────────────────────────────────────────
+// Services
+// ─────────────────────────────────────────────
+
+// ProjectsService — manages projects loaded into the database.
+service ProjectsService {
+  rpc ListProjects(google.protobuf.Empty) returns (ListProjectsResponse) {
+    option (google.api.http) = {get: "/api/v1/projects"};
+  }
+
+  rpc GetProjectStats(GetProjectStatsRequest) returns (ProjectStats) {
+    option (google.api.http) = {get: "/api/v1/projects/{id}"};
+  }
+
+  rpc DeleteProject(DeleteProjectRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {delete: "/api/v1/projects/{id}"};
+  }
+}
+
+// ConnectorService — integration with Jira.
+service ConnectorService {
+  rpc ListJiraProjects(ListJiraProjectsRequest) returns (ListJiraProjectsResponse) {
+    option (google.api.http) = {get: "/api/v1/connector/projects"};
+  }
+
+  rpc SyncProject(SyncProjectRequest) returns (SyncProjectResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/connector/projects/sync"
+      body: "*"
+    };
+  }
+}
+
+// AnalyticsService — analytics via Analyzer service.
+service AnalyticsService {
+  // GetChart returns aggregated chart data for a project.
+  rpc GetChart(GetChartRequest) returns (GetChartResponse) {
+    option (google.api.http) = {get: "/api/v1/analytics/charts"};
+  }
+
+  // GetStats returns issue counters for a project.
+  rpc GetStats(GetStatsRequest) returns (GetStatsResponse) {
+    option (google.api.http) = {get: "/api/v1/analytics/stats"};
+  }
+
+  // CompareProjects returns stats for two projects side by side.
+  rpc CompareProjects(CompareProjectsRequest) returns (CompareProjectsResponse) {
+    option (google.api.http) = {get: "/api/v1/analytics/compare"};
+  }
+}
+
+// ─────────────────────────────────────────────
+// Enums
+// ─────────────────────────────────────────────
+
+enum ChartType {
+  CHART_TYPE_UNSPECIFIED          = 0;
+  CHART_TYPE_OPEN_STATE_HISTOGRAM = 1; // Duration histogram for open issues
+  CHART_TYPE_STATE_DISTRIBUTION   = 2; // Issue count by status
+  CHART_TYPE_COMPLEXITY_HISTOGRAM = 3; // Time-spent histogram
+  CHART_TYPE_PRIORITY             = 4; // Issue count by priority
+  CHART_TYPE_DAILY_ACTIVITY       = 5; // Daily created/closed activity
+}
+
+// ─────────────────────────────────────────────
+// Shared messages
+// ─────────────────────────────────────────────
+
+// ProjectSummary — brief representation of a project stored in the database.
+message ProjectSummary {
+  int64  id   = 1;
+  string key  = 2;
+  string name = 3;
+  string url  = 4;
+}
+
+// ProjectStats — aggregated project statistics.
+// Fields mirror repository.ProjectStats in the analyzer service.
+message ProjectStats {
+  int64  project_id              = 1;
+  int32  count_total             = 2;
+  int32  count_open              = 3;
+  int32  count_closed            = 4;
+  int32  count_reopened          = 5;
+  int32  count_resolved          = 6;
+  int32  count_in_progress       = 7;
+  int32  total_duration_closed   = 8; // Total closed duration in days
+  int32  count_created_last_week = 9;
+}
+
+// JiraProject — project from Jira with a flag indicating whether it is loaded into the database.
+message JiraProject {
+  string key       = 1;
+  string name      = 2;
+  string self_url  = 3; // Jira self-link
+  bool   existence = 4; // true if the project is already loaded into the database
+}
+
+// PageInfo — pagination metadata.
+message PageInfo {
+  int32 current_page = 1;
+  int32 page_count   = 2;
+  int32 total_count  = 3;
+}
+
+// ─────────────────────────────────────────────
+// ProjectsService messages
+// ─────────────────────────────────────────────
+
+message ListProjectsResponse {
+  repeated ProjectSummary projects = 1;
+}
+
+message GetProjectStatsRequest {
+  int64 id = 1;
+}
+
+message DeleteProjectRequest {
+  int64 id = 1;
+}
+
+// ─────────────────────────────────────────────
+// ConnectorService messages
+// ─────────────────────────────────────────────
+
+message ListJiraProjectsRequest {
+  int32  page   = 1; // Zero-based page number
+  int32  limit  = 2;
+  string search = 3; // Filter by name or key
+}
+
+message ListJiraProjectsResponse {
+  repeated JiraProject projects  = 1;
+  PageInfo             page_info = 2;
+}
+
+message SyncProjectRequest {
+  string project_key = 1;
+}
+
+message SyncProjectResponse {
+  string project_key = 1;
+  string message     = 2;
+}
+
+// ─────────────────────────────────────────────
+// AnalyticsService messages
+// ─────────────────────────────────────────────
+
+message GetChartRequest {
+  int64     project_id = 1;
+  ChartType chart_type = 2;
+}
+
+// GetChartResponse — raw chart data as JSON bytes, as returned by the analyzer.
+message GetChartResponse {
+  bytes data = 1;
+}
+
+message GetStatsRequest {
+  int64 project_id = 1;
+}
+
+message GetStatsResponse {
+  ProjectStats stats = 1;
+}
+
+message CompareProjectsRequest {
+  int64 project_id_a = 1;
+  int64 project_id_b = 2;
+}
+
+message CompareProjectsResponse {
+  ProjectStats project_a = 1;
+  ProjectStats project_b = 2;
+}
