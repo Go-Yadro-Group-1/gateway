@@ -2,35 +2,58 @@ syntax = "proto3";
 
 package gateway.v1;
 
+import "google/api/annotations.proto";
 import "google/protobuf/empty.proto";
 
 // ─────────────────────────────────────────────
 // Services
 // ─────────────────────────────────────────────
 
-// ProjectsService — управление проектами, загруженными в БД.
+// ProjectsService — manages projects loaded into the database.
 service ProjectsService {
-  rpc ListProjects(google.protobuf.Empty) returns (ListProjectsResponse);
-  rpc GetProjectStats(GetProjectStatsRequest) returns (ProjectStats);
-  rpc DeleteProject(DeleteProjectRequest) returns (google.protobuf.Empty);
+  rpc ListProjects(google.protobuf.Empty) returns (ListProjectsResponse) {
+    option (google.api.http) = {get: "/api/v1/projects"};
+  }
+
+  rpc GetProjectStats(GetProjectStatsRequest) returns (ProjectStats) {
+    option (google.api.http) = {get: "/api/v1/projects/{id}"};
+  }
+
+  rpc DeleteProject(DeleteProjectRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {delete: "/api/v1/projects/{id}"};
+  }
 }
 
-// ConnectorService — взаимодействие с Jira.
+// ConnectorService — integration with Jira.
 service ConnectorService {
-  rpc ListJiraProjects(ListJiraProjectsRequest) returns (ListJiraProjectsResponse);
-  rpc SyncProject(SyncProjectRequest) returns (SyncProjectResponse);
+  rpc ListJiraProjects(ListJiraProjectsRequest) returns (ListJiraProjectsResponse) {
+    option (google.api.http) = {get: "/api/v1/connector/projects"};
+  }
+
+  rpc SyncProject(SyncProjectRequest) returns (SyncProjectResponse) {
+    option (google.api.http) = {
+      post: "/api/v1/connector/projects/sync"
+      body: "*"
+    };
+  }
 }
 
-// AnalyticsService — аналитика через Analyzer.
+// AnalyticsService — analytics via Analyzer service.
 service AnalyticsService {
-  // Получить агрегированные графики для проекта.
-  rpc GetChart(GetChartRequest) returns (GetChartResponse);
+  // GetChart returns aggregated chart data for a project.
+  rpc GetChart(GetChartRequest) returns (GetChartResponse) {
+    option (google.api.http) = {get: "/api/v1/analytics/charts"};
+  }
 
-  // Получить статистику (счётчики задач) для проекта.
-  rpc GetStats(GetStatsRequest) returns (GetStatsResponse);
+  // GetStats returns issue counters for a project.
+  rpc GetStats(GetStatsRequest) returns (GetStatsResponse) {
+    option (google.api.http) = {get: "/api/v1/analytics/stats"};
+  }
 
-  // Сравнить статистику двух проектов.
-  rpc CompareProjects(CompareProjectsRequest) returns (CompareProjectsResponse);
+  // CompareProjects returns stats for two projects side by side.
+  rpc CompareProjects(CompareProjectsRequest) returns (CompareProjectsResponse) {
+    option (google.api.http) = {get: "/api/v1/analytics/compare"};
+  }
 }
 
 // ─────────────────────────────────────────────
@@ -39,27 +62,27 @@ service AnalyticsService {
 
 enum ChartType {
   CHART_TYPE_UNSPECIFIED          = 0;
-  CHART_TYPE_OPEN_STATE_HISTOGRAM = 1; // Гистограмма длительности открытых задач
-  CHART_TYPE_STATE_DISTRIBUTION   = 2; // Распределение задач по статусам
-  CHART_TYPE_COMPLEXITY_HISTOGRAM = 3; // Гистограмма трудозатрат
-  CHART_TYPE_PRIORITY             = 4; // Распределение по приоритетам
-  CHART_TYPE_DAILY_ACTIVITY       = 5; // Дневная активность (создание/закрытие)
+  CHART_TYPE_OPEN_STATE_HISTOGRAM = 1; // Duration histogram for open issues
+  CHART_TYPE_STATE_DISTRIBUTION   = 2; // Issue count by status
+  CHART_TYPE_COMPLEXITY_HISTOGRAM = 3; // Time-spent histogram
+  CHART_TYPE_PRIORITY             = 4; // Issue count by priority
+  CHART_TYPE_DAILY_ACTIVITY       = 5; // Daily created/closed activity
 }
 
 // ─────────────────────────────────────────────
 // Shared messages
 // ─────────────────────────────────────────────
 
-// ProjectSummary — краткое представление проекта из БД.
+// ProjectSummary — brief representation of a project stored in the database.
 message ProjectSummary {
   int64  id   = 1;
   string key  = 2;
   string name = 3;
-  string url  = 4; // Self-ссылка Jira
+  string url  = 4;
 }
 
-// ProjectStats — агрегированная статистика проекта.
-// Поля соответствуют repository.ProjectStats в analyzer.
+// ProjectStats — aggregated project statistics.
+// Fields mirror repository.ProjectStats in the analyzer service.
 message ProjectStats {
   int64  project_id              = 1;
   int32  count_total             = 2;
@@ -68,19 +91,19 @@ message ProjectStats {
   int32  count_reopened          = 5;
   int32  count_resolved          = 6;
   int32  count_in_progress       = 7;
-  int32  total_duration_closed   = 8; // Суммарное время закрытия (дни)
+  int32  total_duration_closed   = 8; // Total closed duration in days
   int32  count_created_last_week = 9;
 }
 
-// JiraProject — проект из Jira с флагом наличия в БД.
+// JiraProject — project from Jira with a flag indicating whether it is loaded into the database.
 message JiraProject {
   string key       = 1;
   string name      = 2;
-  string self_url  = 3; // Jira self-ссылка
-  bool   existence = 4; // true — проект уже загружен в БД
+  string self_url  = 3; // Jira self-link
+  bool   existence = 4; // true if the project is already loaded into the database
 }
 
-// PageInfo — пагинация.
+// PageInfo — pagination metadata.
 message PageInfo {
   int32 current_page = 1;
   int32 page_count   = 2;
@@ -108,9 +131,9 @@ message DeleteProjectRequest {
 // ─────────────────────────────────────────────
 
 message ListJiraProjectsRequest {
-  int32  page   = 1; // Начиная с 0
+  int32  page   = 1; // Zero-based page number
   int32  limit  = 2;
-  string search = 3; // Фильтр по имени или ключу
+  string search = 3; // Filter by name or key
 }
 
 message ListJiraProjectsResponse {
@@ -136,7 +159,7 @@ message GetChartRequest {
   ChartType chart_type = 2;
 }
 
-// GetChartResponse — сырые данные графика в JSON (как возвращает analyzer).
+// GetChartResponse — raw chart data as JSON bytes, as returned by the analyzer.
 message GetChartResponse {
   bytes data = 1;
 }

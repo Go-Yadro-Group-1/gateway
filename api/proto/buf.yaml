@@ -1,5 +1,8 @@
 version: v2
 
+deps:
+  - buf.build/googleapis/googleapis
+
 lint:
   use:
     - STANDARD
@@ -11,6 +14,7 @@ lint:
     - COMMENT_ONEOF
     - COMMENT_RPC
     - COMMENT_SERVICE
+    - RPC_RESPONSE_STANDARD_NAME
   enum_zero_value_suffix: _UNSPECIFIED
   rpc_allow_same_request_response: false
   rpc_allow_google_protobuf_empty_requests: true

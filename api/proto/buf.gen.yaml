@@ -10,3 +10,14 @@ plugins:
   - name: go-grpc
     out: ../../gen/grpc
     opt: paths=source_relative
+  - name: grpc-gateway
+    out: ../../gen/grpc
+    opt:
+      - paths=source_relative
+      - generate_unbound_methods=true
+  - name: openapiv2
+    out: ../../gen/openapi
+    opt:
+      - logtostderr=true
+      - allow_merge=true
+      - merge_file_name=gateway
