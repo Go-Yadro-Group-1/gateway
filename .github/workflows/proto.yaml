@@ -6,13 +6,9 @@ on:
       - main
     paths:
       - "api/proto/**"
-      - "buf.gen.yaml"
-      - "buf.yaml"
   pull_request:
     paths:
       - "api/proto/**"
-      - "buf.gen.yaml"
-      - "buf.yaml"
 
 jobs:
   lint:
@@ -26,6 +22,7 @@ jobs:
 
       - uses: bufbuild/buf-action@v1
         with:
+          input: api/proto
           lint: true
           format: true
           breaking: false
