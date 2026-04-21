@@ -1,0 +1,42 @@
+version: "2"
+
+run:
+  build-tags:
+    - integration
+    - unit
+
+  timeout: 5m
+  tests: true
+
+linters:
+  default: all
+  disable:
+    - depguard
+    - wsl
+    - nolintlint
+
+  exclusions:
+    generated: strict
+    warn-unused: false
+    presets:
+      - comments
+      - std-error-handling
+      - common-false-positives
+      - legacy
+    rules:
+      - path: _test\.go
+        linters:
+          - gocyclo
+          - errcheck
+          - dupl
+          - gosec
+          - noinlineerr
+
+formatters:
+  enable:
+    - gofmt
+    - gofumpt
+    - goimports
+    - golines
+  exclusions:
+    generated: strict
