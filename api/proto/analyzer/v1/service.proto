@@ -1,0 +1,56 @@
+syntax = "proto3";
+
+package analyzer.v1;
+
+service AnalyzerService {
+  rpc GetChart(GetChartRequest) returns (GetChartResponse);
+  rpc GetStats(GetStatsRequest) returns (GetStatsResponse);
+  rpc CompareProjects(CompareProjectsRequest) returns (CompareProjectsResponse);
+}
+
+enum ChartType {
+  CHART_TYPE_UNSPECIFIED = 0;
+  CHART_TYPE_OPEN_STATE_HISTOGRAM = 1;
+  CHART_TYPE_STATE_DISTRIBUTION = 2;
+  CHART_TYPE_COMPLEXITY_HISTOGRAM = 3;
+  CHART_TYPE_PRIORITY = 4;
+  CHART_TYPE_DAILY_ACTIVITY = 5;
+}
+
+message GetChartRequest {
+  int32 project_id = 1;
+  ChartType chart_type = 2;
+}
+
+message GetChartResponse {
+  bytes data = 1;
+}
+
+message GetStatsRequest {
+  int32 project_id = 1;
+}
+
+message GetStatsResponse {
+  Stats stats = 1;
+}
+
+message Stats {
+  int32 count_total = 1;
+  int32 count_open = 2;
+  int32 count_closed = 3;
+  int32 count_reopened = 4;
+  int32 count_resolved = 5;
+  int32 count_in_progress = 6;
+  float avg_duration_closed = 7;
+  float avg_created_per_day = 8;
+}
+
+message CompareProjectsRequest {
+  int32 project_id_a = 1;
+  int32 project_id_b = 2;
+}
+
+message CompareProjectsResponse {
+  Stats project_a = 1;
+  Stats project_b = 2;
+}

@@ -1,0 +1,32 @@
+name: Proto-Check-Correctness
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "api/proto/**"
+      - "buf.gen.yaml"
+      - "buf.yaml"
+  pull_request:
+    paths:
+      - "api/proto/**"
+      - "buf.gen.yaml"
+      - "buf.yaml"
+
+jobs:
+  lint:
+    name: buf-checks
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: bufbuild/buf-action@v1
+        with:
+          lint: true
+          format: true
+          breaking: false
+          push: false
