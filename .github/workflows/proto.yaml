@@ -6,9 +6,11 @@ on:
       - main
     paths:
       - "api/proto/**"
+      - ".github/workflows/proto.yaml"
   pull_request:
     paths:
       - "api/proto/**"
+      - ".github/workflows/proto.yaml"
 
 jobs:
   buf-checks:
