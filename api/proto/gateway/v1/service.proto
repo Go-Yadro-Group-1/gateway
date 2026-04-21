@@ -1,0 +1,160 @@
+syntax = "proto3";
+
+package gateway.v1;
+
+import "google/protobuf/empty.proto";
+
+// ─────────────────────────────────────────────
+// Services
+// ─────────────────────────────────────────────
+
+// ProjectsService — управление проектами, загруженными в БД.
+service ProjectsService {
+  rpc ListProjects(google.protobuf.Empty) returns (ListProjectsResponse);
+  rpc GetProjectStats(GetProjectStatsRequest) returns (ProjectStats);
+  rpc DeleteProject(DeleteProjectRequest) returns (google.protobuf.Empty);
+}
+
+// ConnectorService — взаимодействие с Jira.
+service ConnectorService {
+  rpc ListJiraProjects(ListJiraProjectsRequest) returns (ListJiraProjectsResponse);
+  rpc SyncProject(SyncProjectRequest) returns (SyncProjectResponse);
+}
+
+// AnalyticsService — аналитика через Analyzer.
+service AnalyticsService {
+  // Получить агрегированные графики для проекта.
+  rpc GetChart(GetChartRequest) returns (GetChartResponse);
+
+  // Получить статистику (счётчики задач) для проекта.
+  rpc GetStats(GetStatsRequest) returns (GetStatsResponse);
+
+  // Сравнить статистику двух проектов.
+  rpc CompareProjects(CompareProjectsRequest) returns (CompareProjectsResponse);
+}
+
+// ─────────────────────────────────────────────
+// Enums
+// ─────────────────────────────────────────────
+
+enum ChartType {
+  CHART_TYPE_UNSPECIFIED          = 0;
+  CHART_TYPE_OPEN_STATE_HISTOGRAM = 1; // Гистограмма длительности открытых задач
+  CHART_TYPE_STATE_DISTRIBUTION   = 2; // Распределение задач по статусам
+  CHART_TYPE_COMPLEXITY_HISTOGRAM = 3; // Гистограмма трудозатрат
+  CHART_TYPE_PRIORITY             = 4; // Распределение по приоритетам
+  CHART_TYPE_DAILY_ACTIVITY       = 5; // Дневная активность (создание/закрытие)
+}
+
+// ─────────────────────────────────────────────
+// Shared messages
+// ─────────────────────────────────────────────
+
+// ProjectSummary — краткое представление проекта из БД.
+message ProjectSummary {
+  int64  id   = 1;
+  string key  = 2;
+  string name = 3;
+  string url  = 4; // Self-ссылка Jira
+}
+
+// ProjectStats — агрегированная статистика проекта.
+// Поля соответствуют repository.ProjectStats в analyzer.
+message ProjectStats {
+  int64  project_id              = 1;
+  int32  count_total             = 2;
+  int32  count_open              = 3;
+  int32  count_closed            = 4;
+  int32  count_reopened          = 5;
+  int32  count_resolved          = 6;
+  int32  count_in_progress       = 7;
+  int32  total_duration_closed   = 8; // Суммарное время закрытия (дни)
+  int32  count_created_last_week = 9;
+}
+
+// JiraProject — проект из Jira с флагом наличия в БД.
+message JiraProject {
+  string key       = 1;
+  string name      = 2;
+  string self_url  = 3; // Jira self-ссылка
+  bool   existence = 4; // true — проект уже загружен в БД
+}
+
+// PageInfo — пагинация.
+message PageInfo {
+  int32 current_page = 1;
+  int32 page_count   = 2;
+  int32 total_count  = 3;
+}
+
+// ─────────────────────────────────────────────
+// ProjectsService messages
+// ─────────────────────────────────────────────
+
+message ListProjectsResponse {
+  repeated ProjectSummary projects = 1;
+}
+
+message GetProjectStatsRequest {
+  int64 id = 1;
+}
+
+message DeleteProjectRequest {
+  int64 id = 1;
+}
+
+// ─────────────────────────────────────────────
+// ConnectorService messages
+// ─────────────────────────────────────────────
+
+message ListJiraProjectsRequest {
+  int32  page   = 1; // Начиная с 0
+  int32  limit  = 2;
+  string search = 3; // Фильтр по имени или ключу
+}
+
+message ListJiraProjectsResponse {
+  repeated JiraProject projects  = 1;
+  PageInfo             page_info = 2;
+}
+
+message SyncProjectRequest {
+  string project_key = 1;
+}
+
+message SyncProjectResponse {
+  string project_key = 1;
+  string message     = 2;
+}
+
+// ─────────────────────────────────────────────
+// AnalyticsService messages
+// ─────────────────────────────────────────────
+
+message GetChartRequest {
+  int64     project_id = 1;
+  ChartType chart_type = 2;
+}
+
+// GetChartResponse — сырые данные графика в JSON (как возвращает analyzer).
+message GetChartResponse {
+  bytes data = 1;
+}
+
+message GetStatsRequest {
+  int64 project_id = 1;
+}
+
+message GetStatsResponse {
+  ProjectStats stats = 1;
+}
+
+message CompareProjectsRequest {
+  int64 project_id_a = 1;
+  int64 project_id_b = 2;
+}
+
+message CompareProjectsResponse {
+  ProjectStats project_a = 1;
+  ProjectStats project_b = 2;
+}
