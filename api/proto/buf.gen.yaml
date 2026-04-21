@@ -5,8 +5,8 @@ managed:
     default: github.com/Go-Yadro-Group-1/gateway/gen/grpc
 plugins:
   - name: go
-    out: gen/grpc
+    out: ../../gen/grpc
     opt: paths=source_relative
   - name: go-grpc
-    out: gen/grpc
+    out: ../../gen/grpc
     opt: paths=source_relative
