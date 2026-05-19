@@ -424,20 +424,15 @@
     "v1PageInfo": {
       "type": "object",
       "properties": {
-        "currentPage": {
-          "type": "integer",
-          "format": "int32"
-        },
-        "pageCount": {
-          "type": "integer",
-          "format": "int32"
-        },
         "totalCount": {
           "type": "integer",
           "format": "int32"
+        },
+        "isLast": {
+          "type": "boolean"
         }
       },
-      "description": "PageInfo — pagination metadata."
+      "description": "PageInfo — pagination metadata exposed to clients.\nField numbers are reserved to keep forward-compatibility if current_page/page_count\nare ever reintroduced."
     },
     "v1ProjectStats": {
       "type": "object",
