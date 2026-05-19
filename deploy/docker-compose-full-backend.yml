@@ -1,0 +1,59 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: pguser
+      POSTGRES_PASSWORD: pgpassword
+      POSTGRES_DB: jira_tracker
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pguser -d jira_tracker"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+  analyzer:
+    build:
+      context: https://github.com/Go-Yadro-Group-1/jira-analyzer.git#main
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./analyzer.yaml:/app/config/docker.yaml:ro
+    ports:
+      - "50051:50051"
+      - "9090:9090"
+
+  connector:
+    build:
+      context: https://github.com/Go-Yadro-Group-1/jira-connector.git#main
+    depends_on:
+      postgres:
+        condition: service_healthy
+      analyzer:
+        condition: service_started
+    volumes:
+      - ./connector.yaml:/config/dev.yaml:ro
+    command: ["serve", "--config", "/config/dev.yaml"]
+    ports:
+      - "50052:50052"
+
+  gateway:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    depends_on:
+      analyzer:
+        condition: service_started
+      connector:
+        condition: service_started
+    volumes:
+      - ./gateway.yaml:/app/config/dev.yaml:ro
+    ports:
+      - "8080:8080"
+
+volumes:
+  postgres-data:

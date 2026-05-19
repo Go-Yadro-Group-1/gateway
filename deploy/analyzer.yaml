@@ -1,0 +1,13 @@
+db:
+  host: postgres
+  port: 5432
+  user: pguser
+  password: pgpassword
+  dbname: jira_tracker
+  sslmode: disable
+
+app:
+  log_level: info
+
+metrics:
+  port: 9090

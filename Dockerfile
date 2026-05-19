@@ -18,7 +18,8 @@ WORKDIR /app
 COPY --from=builder /out/jira-gateway ./jira-gateway
 COPY config ./config
 
-EXPOSE 8080
+ENV PORT=8080
+EXPOSE ${PORT}
 
 ENTRYPOINT ["./jira-gateway"]
 CMD ["serve", "--config", "config/dev.yaml"]

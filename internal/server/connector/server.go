@@ -21,6 +21,8 @@ func New(connector connectorv1.ConnectorServiceClient) *Server {
 	}
 }
 
+const defaultPageSize int32 = 50
+
 func (s *Server) ListJiraProjects(
 	ctx context.Context,
 	req *gatewayv1.ListJiraProjectsRequest,
@@ -34,8 +36,15 @@ func (s *Server) ListJiraProjects(
 		return nil, fmt.Errorf("connector.GetAvailableProjects: %w", err)
 	}
 
-	projects := make([]*gatewayv1.JiraProject, 0, len(resp.GetProjects()))
-	for _, p := range resp.GetProjects() {
+	// Connector's upstream Jira endpoint (/rest/api/2/project) is non-paginated
+	// and ignores startAt/maxResults, so it returns the full project list every time.
+	// Slice it here until connector grows real pagination.
+	upstream := resp.GetProjects()
+	page, limit := normalizePaging(req.GetPage(), req.GetLimit())
+	start, end := pageBounds(int32(len(upstream)), page, limit) //nolint:gosec
+
+	projects := make([]*gatewayv1.JiraProject, 0, end-start)
+	for _, p := range upstream[start:end] {
 		projects = append(projects, &gatewayv1.JiraProject{
 			Key:     p.GetKey(),
 			Name:    p.GetTitle(),
@@ -48,10 +57,33 @@ func (s *Server) ListJiraProjects(
 	return &gatewayv1.ListJiraProjectsResponse{
 		Projects: projects,
 		PageInfo: &gatewayv1.PageInfo{
-			TotalCount: resp.GetTotal(),
-			IsLast:     resp.GetIsLast(),
+			TotalCount: int32(len(upstream)),        //nolint:gosec
+			IsLast:     end == int32(len(upstream)), //nolint:gosec
 		},
 	}, nil
+}
+
+func normalizePaging(page, limit int32) (int32, int32) {
+	if page < 0 {
+		page = 0
+	}
+
+	if limit <= 0 {
+		limit = defaultPageSize
+	}
+
+	return page, limit
+}
+
+func pageBounds(total, page, limit int32) (int32, int32) {
+	start := page * limit
+	if start >= total {
+		return total, total
+	}
+
+	end := min(start+limit, total)
+
+	return start, end
 }
 
 func (s *Server) SyncProject(

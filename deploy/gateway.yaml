@@ -1,0 +1,12 @@
+http:
+  host: 0.0.0.0
+  port: 8080
+
+analyzer:
+  address: analyzer:50051
+
+connector:
+  address: connector:50052
+
+app:
+  log_level: info
