@@ -24,7 +24,7 @@
   "paths": {
     "/api/v1/analytics/charts": {
       "get": {
-        "summary": "Получить агрегированные данные графика для проекта.",
+        "summary": "GetChart returns aggregated chart data for a project.",
         "operationId": "AnalyticsService_GetChart",
         "responses": {
           "200": {
@@ -50,6 +50,7 @@
           },
           {
             "name": "chartType",
+            "description": " - CHART_TYPE_OPEN_STATE_HISTOGRAM: Duration histogram for open issues\n - CHART_TYPE_STATE_DISTRIBUTION: Issue count by status\n - CHART_TYPE_COMPLEXITY_HISTOGRAM: Time-spent histogram\n - CHART_TYPE_PRIORITY: Issue count by priority\n - CHART_TYPE_DAILY_ACTIVITY: Daily created/closed activity",
             "in": "query",
             "required": false,
             "type": "string",
@@ -71,7 +72,7 @@
     },
     "/api/v1/analytics/compare": {
       "get": {
-        "summary": "Сравнить статистику двух проектов.",
+        "summary": "CompareProjects returns stats for two projects side by side.",
         "operationId": "AnalyticsService_CompareProjects",
         "responses": {
           "200": {
@@ -110,7 +111,7 @@
     },
     "/api/v1/analytics/stats": {
       "get": {
-        "summary": "Получить статистику (счётчики задач) для проекта.",
+        "summary": "GetStats returns issue counters for a project.",
         "operationId": "AnalyticsService_GetStats",
         "responses": {
           "200": {
@@ -160,6 +161,7 @@
         "parameters": [
           {
             "name": "page",
+            "description": "Zero-based page number",
             "in": "query",
             "required": false,
             "type": "integer",
@@ -174,6 +176,7 @@
           },
           {
             "name": "search",
+            "description": "Filter by name or key",
             "in": "query",
             "required": false,
             "type": "string"
@@ -339,7 +342,8 @@
         "CHART_TYPE_PRIORITY",
         "CHART_TYPE_DAILY_ACTIVITY"
       ],
-      "default": "CHART_TYPE_UNSPECIFIED"
+      "default": "CHART_TYPE_UNSPECIFIED",
+      "title": "- CHART_TYPE_OPEN_STATE_HISTOGRAM: Duration histogram for open issues\n - CHART_TYPE_STATE_DISTRIBUTION: Issue count by status\n - CHART_TYPE_COMPLEXITY_HISTOGRAM: Time-spent histogram\n - CHART_TYPE_PRIORITY: Issue count by priority\n - CHART_TYPE_DAILY_ACTIVITY: Daily created/closed activity"
     },
     "v1CompareProjectsResponse": {
       "type": "object",
@@ -360,7 +364,7 @@
           "format": "byte"
         }
       },
-      "description": "GetChartResponse — сырые данные графика в JSON (как возвращает analyzer)."
+      "description": "GetChartResponse — raw chart data as JSON bytes, as returned by the analyzer."
     },
     "v1GetStatsResponse": {
       "type": "object",
@@ -380,13 +384,15 @@
           "type": "string"
         },
         "selfUrl": {
-          "type": "string"
+          "type": "string",
+          "title": "Jira self-link"
         },
         "existence": {
-          "type": "boolean"
+          "type": "boolean",
+          "title": "true if the project is already loaded into the database"
         }
       },
-      "description": "JiraProject — проект из Jira с флагом наличия в БД."
+      "description": "JiraProject — project from Jira with a flag indicating whether it is loaded into the database."
     },
     "v1ListJiraProjectsResponse": {
       "type": "object",
@@ -431,7 +437,7 @@
           "format": "int32"
         }
       },
-      "description": "PageInfo — пагинация."
+      "description": "PageInfo — pagination metadata."
     },
     "v1ProjectStats": {
       "type": "object",
@@ -466,14 +472,15 @@
         },
         "totalDurationClosed": {
           "type": "integer",
-          "format": "int32"
+          "format": "int32",
+          "title": "Total closed duration in days"
         },
         "countCreatedLastWeek": {
           "type": "integer",
           "format": "int32"
         }
       },
-      "description": "ProjectStats — агрегированная статистика проекта.\nПоля соответствуют repository.ProjectStats в analyzer."
+      "description": "ProjectStats — aggregated project statistics.\nFields mirror repository.ProjectStats in the analyzer service."
     },
     "v1ProjectSummary": {
       "type": "object",
@@ -492,7 +499,7 @@
           "type": "string"
         }
       },
-      "description": "ProjectSummary — краткое представление проекта из БД."
+      "description": "ProjectSummary — brief representation of a project stored in the database."
     },
     "v1SyncProjectRequest": {
       "type": "object",

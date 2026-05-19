@@ -7,7 +7,7 @@
 package gatewayv1
 
 import (
-	_ "github.com/Go-Yadro-Group-1/gateway/gen/grpc/google/api"
+	_ "google.golang.org/genproto/googleapis/api/annotations"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	emptypb "google.golang.org/protobuf/types/known/emptypb"
@@ -27,11 +27,11 @@ type ChartType int32
 
 const (
 	ChartType_CHART_TYPE_UNSPECIFIED          ChartType = 0
-	ChartType_CHART_TYPE_OPEN_STATE_HISTOGRAM ChartType = 1
-	ChartType_CHART_TYPE_STATE_DISTRIBUTION   ChartType = 2
-	ChartType_CHART_TYPE_COMPLEXITY_HISTOGRAM ChartType = 3
-	ChartType_CHART_TYPE_PRIORITY             ChartType = 4
-	ChartType_CHART_TYPE_DAILY_ACTIVITY       ChartType = 5
+	ChartType_CHART_TYPE_OPEN_STATE_HISTOGRAM ChartType = 1 // Duration histogram for open issues
+	ChartType_CHART_TYPE_STATE_DISTRIBUTION   ChartType = 2 // Issue count by status
+	ChartType_CHART_TYPE_COMPLEXITY_HISTOGRAM ChartType = 3 // Time-spent histogram
+	ChartType_CHART_TYPE_PRIORITY             ChartType = 4 // Issue count by priority
+	ChartType_CHART_TYPE_DAILY_ACTIVITY       ChartType = 5 // Daily created/closed activity
 )
 
 // Enum value maps for ChartType.
@@ -81,7 +81,7 @@ func (ChartType) EnumDescriptor() ([]byte, []int) {
 	return file_gateway_v1_service_proto_rawDescGZIP(), []int{0}
 }
 
-// ProjectSummary — краткое представление проекта из БД.
+// ProjectSummary — brief representation of a project stored in the database.
 type ProjectSummary struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            int64                  `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
@@ -150,8 +150,8 @@ func (x *ProjectSummary) GetUrl() string {
 	return ""
 }
 
-// ProjectStats — агрегированная статистика проекта.
-// Поля соответствуют repository.ProjectStats в analyzer.
+// ProjectStats — aggregated project statistics.
+// Fields mirror repository.ProjectStats in the analyzer service.
 type ProjectStats struct {
 	state                protoimpl.MessageState `protogen:"open.v1"`
 	ProjectId            int64                  `protobuf:"varint,1,opt,name=project_id,json=projectId,proto3" json:"project_id,omitempty"`
@@ -161,7 +161,7 @@ type ProjectStats struct {
 	CountReopened        int32                  `protobuf:"varint,5,opt,name=count_reopened,json=countReopened,proto3" json:"count_reopened,omitempty"`
 	CountResolved        int32                  `protobuf:"varint,6,opt,name=count_resolved,json=countResolved,proto3" json:"count_resolved,omitempty"`
 	CountInProgress      int32                  `protobuf:"varint,7,opt,name=count_in_progress,json=countInProgress,proto3" json:"count_in_progress,omitempty"`
-	TotalDurationClosed  int32                  `protobuf:"varint,8,opt,name=total_duration_closed,json=totalDurationClosed,proto3" json:"total_duration_closed,omitempty"`
+	TotalDurationClosed  int32                  `protobuf:"varint,8,opt,name=total_duration_closed,json=totalDurationClosed,proto3" json:"total_duration_closed,omitempty"` // Total closed duration in days
 	CountCreatedLastWeek int32                  `protobuf:"varint,9,opt,name=count_created_last_week,json=countCreatedLastWeek,proto3" json:"count_created_last_week,omitempty"`
 	unknownFields        protoimpl.UnknownFields
 	sizeCache            protoimpl.SizeCache
@@ -260,13 +260,13 @@ func (x *ProjectStats) GetCountCreatedLastWeek() int32 {
 	return 0
 }
 
-// JiraProject — проект из Jira с флагом наличия в БД.
+// JiraProject — project from Jira with a flag indicating whether it is loaded into the database.
 type JiraProject struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Key           string                 `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
 	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	SelfUrl       string                 `protobuf:"bytes,3,opt,name=self_url,json=selfUrl,proto3" json:"self_url,omitempty"`
-	Existence     bool                   `protobuf:"varint,4,opt,name=existence,proto3" json:"existence,omitempty"`
+	SelfUrl       string                 `protobuf:"bytes,3,opt,name=self_url,json=selfUrl,proto3" json:"self_url,omitempty"` // Jira self-link
+	Existence     bool                   `protobuf:"varint,4,opt,name=existence,proto3" json:"existence,omitempty"`           // true if the project is already loaded into the database
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -329,7 +329,7 @@ func (x *JiraProject) GetExistence() bool {
 	return false
 }
 
-// PageInfo — пагинация.
+// PageInfo — pagination metadata.
 type PageInfo struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	CurrentPage   int32                  `protobuf:"varint,1,opt,name=current_page,json=currentPage,proto3" json:"current_page,omitempty"`
@@ -524,9 +524,9 @@ func (x *DeleteProjectRequest) GetId() int64 {
 
 type ListJiraProjectsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	Page          int32                  `protobuf:"varint,1,opt,name=page,proto3" json:"page,omitempty"`
+	Page          int32                  `protobuf:"varint,1,opt,name=page,proto3" json:"page,omitempty"` // Zero-based page number
 	Limit         int32                  `protobuf:"varint,2,opt,name=limit,proto3" json:"limit,omitempty"`
-	Search        string                 `protobuf:"bytes,3,opt,name=search,proto3" json:"search,omitempty"`
+	Search        string                 `protobuf:"bytes,3,opt,name=search,proto3" json:"search,omitempty"` // Filter by name or key
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -782,7 +782,7 @@ func (x *GetChartRequest) GetChartType() ChartType {
 	return ChartType_CHART_TYPE_UNSPECIFIED
 }
 
-// GetChartResponse — сырые данные графика в JSON (как возвращает analyzer).
+// GetChartResponse — raw chart data as JSON bytes, as returned by the analyzer.
 type GetChartResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Data          []byte                 `protobuf:"bytes,1,opt,name=data,proto3" json:"data,omitempty"`
