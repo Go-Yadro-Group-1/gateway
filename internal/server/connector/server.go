@@ -48,9 +48,8 @@ func (s *Server) ListJiraProjects(
 	return &gatewayv1.ListJiraProjectsResponse{
 		Projects: projects,
 		PageInfo: &gatewayv1.PageInfo{
-			CurrentPage: req.GetPage(),
-			PageCount:   pageCount(resp.GetTotal(), req.GetLimit()),
-			TotalCount:  resp.GetTotal(),
+			TotalCount: resp.GetTotal(),
+			IsLast:     resp.GetIsLast(),
 		},
 	}, nil
 }
@@ -70,12 +69,4 @@ func (s *Server) SyncProject(
 		ProjectKey: req.GetProjectKey(),
 		Message:    resp.GetMessage(),
 	}, nil
-}
-
-func pageCount(total, limit int32) int32 {
-	if limit <= 0 {
-		return 0
-	}
-
-	return (total + limit - 1) / limit
 }
