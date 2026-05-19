@@ -103,11 +103,15 @@ message JiraProject {
   bool   existence = 4; // true if the project is already loaded into the database
 }
 
-// PageInfo — pagination metadata.
+// PageInfo — pagination metadata exposed to clients.
+// Field numbers are reserved to keep forward-compatibility if current_page/page_count
+// are ever reintroduced.
 message PageInfo {
-  int32 current_page = 1;
-  int32 page_count   = 2;
-  int32 total_count  = 3;
+  reserved 1, 2;
+  reserved "current_page", "page_count";
+
+  int32 total_count = 3;
+  bool  is_last     = 4;
 }
 
 // ─────────────────────────────────────────────

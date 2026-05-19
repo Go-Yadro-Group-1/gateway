@@ -325,11 +325,11 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type AnalyticsServiceClient interface {
-	// Получить агрегированные данные графика для проекта.
+	// GetChart returns aggregated chart data for a project.
 	GetChart(ctx context.Context, in *GetChartRequest, opts ...grpc.CallOption) (*GetChartResponse, error)
-	// Получить статистику (счётчики задач) для проекта.
+	// GetStats returns issue counters for a project.
 	GetStats(ctx context.Context, in *GetStatsRequest, opts ...grpc.CallOption) (*GetStatsResponse, error)
-	// Сравнить статистику двух проектов.
+	// CompareProjects returns stats for two projects side by side.
 	CompareProjects(ctx context.Context, in *CompareProjectsRequest, opts ...grpc.CallOption) (*CompareProjectsResponse, error)
 }
 
@@ -375,11 +375,11 @@ func (c *analyticsServiceClient) CompareProjects(ctx context.Context, in *Compar
 // All implementations must embed UnimplementedAnalyticsServiceServer
 // for forward compatibility
 type AnalyticsServiceServer interface {
-	// Получить агрегированные данные графика для проекта.
+	// GetChart returns aggregated chart data for a project.
 	GetChart(context.Context, *GetChartRequest) (*GetChartResponse, error)
-	// Получить статистику (счётчики задач) для проекта.
+	// GetStats returns issue counters for a project.
 	GetStats(context.Context, *GetStatsRequest) (*GetStatsResponse, error)
-	// Сравнить статистику двух проектов.
+	// CompareProjects returns stats for two projects side by side.
 	CompareProjects(context.Context, *CompareProjectsRequest) (*CompareProjectsResponse, error)
 	mustEmbedUnimplementedAnalyticsServiceServer()
 }

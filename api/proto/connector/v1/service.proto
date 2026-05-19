@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+package connector.v1;
+
+service ConnectorService {
+  rpc GetAvailableProjects(GetAvailableProjectsRequest) returns (GetAvailableProjectsResponse);
+  rpc DownloadProject(DownloadProjectRequest) returns (DownloadProjectResponse);
+}
+
+message GetAvailableProjectsRequest {
+  string search_query = 1;
+  int32 limit = 2;
+  int32 page = 3;
+}
+
+message JiraProject {
+  string key = 1;
+  string title = 2;
+  string self = 3;
+}
+
+message GetAvailableProjectsResponse {
+  repeated JiraProject projects = 1;
+  int32 total = 2;
+  bool is_last = 3;
+}
+
+message DownloadProjectRequest {
+  string project_key = 1;
+}
+
+message DownloadProjectResponse {
+  string sync_id = 1;
+  string status = 2;
+  string message = 3;
+}
