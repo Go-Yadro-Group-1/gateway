@@ -22,6 +22,8 @@ const (
 	AnalyzerService_GetChart_FullMethodName        = "/analyzer.v1.AnalyzerService/GetChart"
 	AnalyzerService_GetStats_FullMethodName        = "/analyzer.v1.AnalyzerService/GetStats"
 	AnalyzerService_CompareProjects_FullMethodName = "/analyzer.v1.AnalyzerService/CompareProjects"
+	AnalyzerService_ListProjects_FullMethodName    = "/analyzer.v1.AnalyzerService/ListProjects"
+	AnalyzerService_DeleteProject_FullMethodName   = "/analyzer.v1.AnalyzerService/DeleteProject"
 )
 
 // AnalyzerServiceClient is the client API for AnalyzerService service.
@@ -31,6 +33,8 @@ type AnalyzerServiceClient interface {
 	GetChart(ctx context.Context, in *GetChartRequest, opts ...grpc.CallOption) (*GetChartResponse, error)
 	GetStats(ctx context.Context, in *GetStatsRequest, opts ...grpc.CallOption) (*GetStatsResponse, error)
 	CompareProjects(ctx context.Context, in *CompareProjectsRequest, opts ...grpc.CallOption) (*CompareProjectsResponse, error)
+	ListProjects(ctx context.Context, in *ListProjectsRequest, opts ...grpc.CallOption) (*ListProjectsResponse, error)
+	DeleteProject(ctx context.Context, in *DeleteProjectRequest, opts ...grpc.CallOption) (*DeleteProjectResponse, error)
 }
 
 type analyzerServiceClient struct {
@@ -71,6 +75,26 @@ func (c *analyzerServiceClient) CompareProjects(ctx context.Context, in *Compare
 	return out, nil
 }
 
+func (c *analyzerServiceClient) ListProjects(ctx context.Context, in *ListProjectsRequest, opts ...grpc.CallOption) (*ListProjectsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListProjectsResponse)
+	err := c.cc.Invoke(ctx, AnalyzerService_ListProjects_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *analyzerServiceClient) DeleteProject(ctx context.Context, in *DeleteProjectRequest, opts ...grpc.CallOption) (*DeleteProjectResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DeleteProjectResponse)
+	err := c.cc.Invoke(ctx, AnalyzerService_DeleteProject_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AnalyzerServiceServer is the server API for AnalyzerService service.
 // All implementations must embed UnimplementedAnalyzerServiceServer
 // for forward compatibility
@@ -78,6 +102,8 @@ type AnalyzerServiceServer interface {
 	GetChart(context.Context, *GetChartRequest) (*GetChartResponse, error)
 	GetStats(context.Context, *GetStatsRequest) (*GetStatsResponse, error)
 	CompareProjects(context.Context, *CompareProjectsRequest) (*CompareProjectsResponse, error)
+	ListProjects(context.Context, *ListProjectsRequest) (*ListProjectsResponse, error)
+	DeleteProject(context.Context, *DeleteProjectRequest) (*DeleteProjectResponse, error)
 	mustEmbedUnimplementedAnalyzerServiceServer()
 }
 
@@ -93,6 +119,12 @@ func (UnimplementedAnalyzerServiceServer) GetStats(context.Context, *GetStatsReq
 }
 func (UnimplementedAnalyzerServiceServer) CompareProjects(context.Context, *CompareProjectsRequest) (*CompareProjectsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CompareProjects not implemented")
+}
+func (UnimplementedAnalyzerServiceServer) ListProjects(context.Context, *ListProjectsRequest) (*ListProjectsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListProjects not implemented")
+}
+func (UnimplementedAnalyzerServiceServer) DeleteProject(context.Context, *DeleteProjectRequest) (*DeleteProjectResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DeleteProject not implemented")
 }
 func (UnimplementedAnalyzerServiceServer) mustEmbedUnimplementedAnalyzerServiceServer() {}
 
@@ -161,6 +193,42 @@ func _AnalyzerService_CompareProjects_Handler(srv interface{}, ctx context.Conte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AnalyzerService_ListProjects_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListProjectsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AnalyzerServiceServer).ListProjects(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AnalyzerService_ListProjects_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AnalyzerServiceServer).ListProjects(ctx, req.(*ListProjectsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AnalyzerService_DeleteProject_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteProjectRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AnalyzerServiceServer).DeleteProject(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AnalyzerService_DeleteProject_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AnalyzerServiceServer).DeleteProject(ctx, req.(*DeleteProjectRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AnalyzerService_ServiceDesc is the grpc.ServiceDesc for AnalyzerService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -179,6 +247,14 @@ var AnalyzerService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CompareProjects",
 			Handler:    _AnalyzerService_CompareProjects_Handler,
+		},
+		{
+			MethodName: "ListProjects",
+			Handler:    _AnalyzerService_ListProjects_Handler,
+		},
+		{
+			MethodName: "DeleteProject",
+			Handler:    _AnalyzerService_DeleteProject_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

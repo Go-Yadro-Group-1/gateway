@@ -6,6 +6,8 @@ service AnalyzerService {
   rpc GetChart(GetChartRequest) returns (GetChartResponse);
   rpc GetStats(GetStatsRequest) returns (GetStatsResponse);
   rpc CompareProjects(CompareProjectsRequest) returns (CompareProjectsResponse);
+  rpc ListProjects(ListProjectsRequest) returns (ListProjectsResponse);
+  rpc DeleteProject(DeleteProjectRequest) returns (DeleteProjectResponse);
 }
 
 enum ChartType {
@@ -54,3 +56,20 @@ message CompareProjectsResponse {
   Stats project_a = 1;
   Stats project_b = 2;
 }
+
+message ProjectInfo {
+  int64 project_id = 1;
+  string project_key = 2;
+}
+
+message ListProjectsRequest {}
+
+message ListProjectsResponse {
+  repeated ProjectInfo projects = 1;
+}
+
+message DeleteProjectRequest {
+  int64 project_id = 1;
+}
+
+message DeleteProjectResponse {}

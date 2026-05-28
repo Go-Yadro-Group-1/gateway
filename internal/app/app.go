@@ -37,8 +37,8 @@ func New(ctx context.Context, cfg *config.Config) (*App, error) {
 	}
 
 	analyticsSrv := analytics.New(analyzerCli.Analyzer())
-	connectorSrv := connectorserver.New(connectorCli.Connector())
-	projectsSrv := projects.New(analyticsSrv)
+	connectorSrv := connectorserver.New(connectorCli.Connector(), analyzerCli.Analyzer())
+	projectsSrv := projects.New(analyticsSrv, analyzerCli.Analyzer())
 
 	mux := runtime.NewServeMux()
 
