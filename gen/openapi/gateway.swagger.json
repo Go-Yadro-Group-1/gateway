@@ -219,6 +219,36 @@
         ]
       }
     },
+    "/api/v1/connector/sync/{syncId}/status": {
+      "get": {
+        "operationId": "ConnectorService_GetSyncStatus",
+        "responses": {
+          "200": {
+            "description": "A successful response.",
+            "schema": {
+              "$ref": "#/definitions/v1GetSyncStatusResponse"
+            }
+          },
+          "default": {
+            "description": "An unexpected error response.",
+            "schema": {
+              "$ref": "#/definitions/rpcStatus"
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "syncId",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "tags": [
+          "ConnectorService"
+        ]
+      }
+    },
     "/api/v1/projects": {
       "get": {
         "operationId": "ProjectsService_ListProjects",
@@ -374,6 +404,31 @@
         }
       }
     },
+    "v1GetSyncStatusResponse": {
+      "type": "object",
+      "properties": {
+        "syncId": {
+          "type": "string"
+        },
+        "state": {
+          "$ref": "#/definitions/v1SyncState"
+        },
+        "processed": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "total": {
+          "type": "integer",
+          "format": "int64"
+        },
+        "error": {
+          "type": "string"
+        },
+        "projectKey": {
+          "type": "string"
+        }
+      }
+    },
     "v1JiraProject": {
       "type": "object",
       "properties": {
@@ -512,8 +567,24 @@
         },
         "message": {
           "type": "string"
+        },
+        "syncId": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
         }
       }
+    },
+    "v1SyncState": {
+      "type": "string",
+      "enum": [
+        "SYNC_STATE_UNSPECIFIED",
+        "SYNC_STATE_RUNNING",
+        "SYNC_STATE_COMPLETED",
+        "SYNC_STATE_FAILED"
+      ],
+      "default": "SYNC_STATE_UNSPECIFIED"
     }
   }
 }

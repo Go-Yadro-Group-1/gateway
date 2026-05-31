@@ -36,6 +36,10 @@ service ConnectorService {
       body: "*"
     };
   }
+
+  rpc GetSyncStatus(GetSyncStatusRequest) returns (GetSyncStatusResponse) {
+    option (google.api.http) = {get: "/api/v1/connector/sync/{sync_id}/status"};
+  }
 }
 
 // AnalyticsService — analytics via Analyzer service.
@@ -59,6 +63,13 @@ service AnalyticsService {
 // ─────────────────────────────────────────────
 // Enums
 // ─────────────────────────────────────────────
+
+enum SyncState {
+  SYNC_STATE_UNSPECIFIED = 0;
+  SYNC_STATE_RUNNING     = 1;
+  SYNC_STATE_COMPLETED   = 2;
+  SYNC_STATE_FAILED      = 3;
+}
 
 enum ChartType {
   CHART_TYPE_UNSPECIFIED          = 0;
@@ -152,6 +163,21 @@ message SyncProjectRequest {
 message SyncProjectResponse {
   string project_key = 1;
   string message     = 2;
+  string sync_id     = 3;
+  string status      = 4;
+}
+
+message GetSyncStatusRequest {
+  string sync_id = 1;
+}
+
+message GetSyncStatusResponse {
+  string    sync_id     = 1;
+  SyncState state       = 2;
+  uint32    processed   = 3;
+  uint32    total       = 4;
+  string    error       = 5;
+  string    project_key = 6;
 }
 
 // ─────────────────────────────────────────────

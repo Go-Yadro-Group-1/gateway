@@ -88,6 +88,29 @@ func (s *Server) SyncProject(
 	return &gatewayv1.SyncProjectResponse{
 		ProjectKey: req.GetProjectKey(),
 		Message:    resp.GetMessage(),
+		SyncId:     resp.GetSyncId(),
+		Status:     resp.GetStatus(),
+	}, nil
+}
+
+func (s *Server) GetSyncStatus(
+	ctx context.Context,
+	req *gatewayv1.GetSyncStatusRequest,
+) (*gatewayv1.GetSyncStatusResponse, error) {
+	resp, err := s.connector.GetSyncStatus(ctx, &connectorv1.GetSyncStatusRequest{
+		SyncId: req.GetSyncId(),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("connector.GetSyncStatus: %w", err)
+	}
+
+	return &gatewayv1.GetSyncStatusResponse{
+		SyncId:     resp.GetSyncId(),
+		State:      gatewayv1.SyncState(resp.GetState()),
+		Processed:  resp.GetProcessed(),
+		Total:      resp.GetTotal(),
+		Error:      resp.GetError(),
+		ProjectKey: resp.GetProjectKey(),
 	}, nil
 }
 
