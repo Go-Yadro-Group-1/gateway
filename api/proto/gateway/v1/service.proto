@@ -95,6 +95,9 @@ message ProjectSummary {
 // ProjectStats — aggregated project statistics.
 // Fields mirror repository.ProjectStats in the analyzer service.
 message ProjectStats {
+  reserved 8; // was total_duration_closed; replaced by avg_duration_closed
+  reserved "total_duration_closed";
+
   int64  project_id              = 1;
   int32  count_total             = 2;
   int32  count_open              = 3;
@@ -102,8 +105,8 @@ message ProjectStats {
   int32  count_reopened          = 5;
   int32  count_resolved          = 6;
   int32  count_in_progress       = 7;
-  int32  total_duration_closed   = 8; // Total closed duration in days
   int32  count_created_last_week = 9;
+  float  avg_duration_closed     = 10; // Average closure duration per issue, hours
 }
 
 // JiraProject — project from Jira with a flag indicating whether it is loaded into the database.

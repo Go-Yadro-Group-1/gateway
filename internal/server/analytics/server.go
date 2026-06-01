@@ -100,8 +100,8 @@ func statsToGateway(projectID int64, src *analyzerv1.Stats) *gatewayv1.ProjectSt
 		CountReopened:        0,
 		CountResolved:        0,
 		CountInProgress:      0,
-		TotalDurationClosed:  0,
 		CountCreatedLastWeek: 0,
+		AvgDurationClosed:    0,
 	}
 	if src == nil {
 		return stats
@@ -113,6 +113,7 @@ func statsToGateway(projectID int64, src *analyzerv1.Stats) *gatewayv1.ProjectSt
 	stats.CountReopened = src.GetCountReopened()
 	stats.CountResolved = src.GetCountResolved()
 	stats.CountInProgress = src.GetCountInProgress()
+	stats.AvgDurationClosed = src.GetAvgDurationClosed()
 
 	return stats
 }

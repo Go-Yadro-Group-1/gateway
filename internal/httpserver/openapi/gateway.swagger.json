@@ -520,14 +520,14 @@
           "type": "integer",
           "format": "int32"
         },
-        "totalDurationClosed": {
-          "type": "integer",
-          "format": "int32",
-          "title": "Total closed duration in days"
-        },
         "countCreatedLastWeek": {
           "type": "integer",
           "format": "int32"
+        },
+        "avgDurationClosed": {
+          "type": "number",
+          "format": "float",
+          "title": "Average closure duration per issue, hours"
         }
       },
       "description": "ProjectStats — aggregated project statistics.\nFields mirror repository.ProjectStats in the analyzer service."
