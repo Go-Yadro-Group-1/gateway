@@ -14,6 +14,7 @@ import (
 	"github.com/Go-Yadro-Group-1/gateway/internal/app"
 	"github.com/Go-Yadro-Group-1/gateway/internal/config"
 	"github.com/Go-Yadro-Group-1/gateway/internal/httpserver"
+	"github.com/joho/godotenv"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -39,6 +40,11 @@ func NewCommand() *cobra.Command {
 }
 
 func run(cmd *cobra.Command, _ []string) error {
+	// Best-effort: load a local .env if present. godotenv does not override
+	// variables already set in the environment, so platform-injected env
+	// (e.g. Timeweb) keeps precedence; a missing file is not an error.
+	_ = godotenv.Load()
+
 	cfg, err := loadConfig(cmd)
 	if err != nil {
 		return fmt.Errorf("load config: %w", err)
@@ -125,9 +131,19 @@ func loadConfig(cmd *cobra.Command) (*config.Config, error) {
 
 	viper.AutomaticEnv()
 
+	err = config.BindEnvs()
+	if err != nil {
+		return nil, fmt.Errorf("bind envs: %w", err)
+	}
+
+	// A missing config file is not fatal: the whole config can be supplied via
+	// the environment (.env). Only surface real read/parse errors.
 	err = viper.ReadInConfig()
 	if err != nil {
-		return nil, fmt.Errorf("read config: %w", err)
+		var notFound viper.ConfigFileNotFoundError
+		if !errors.As(err, &notFound) && !os.IsNotExist(err) {
+			return nil, fmt.Errorf("read config: %w", err)
+		}
 	}
 
 	cfg, err := config.LoadConfig()

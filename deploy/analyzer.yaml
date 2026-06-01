@@ -1,8 +1,8 @@
+# Secrets (db.user, db.password) are injected from the environment / .env
+# (DB_USER, DB_PASSWORD) and intentionally omitted here. See root .env.example.
 db:
   host: postgres
   port: 5432
-  user: pguser
-  password: pgpassword
   dbname: jira_tracker
   sslmode: disable
 

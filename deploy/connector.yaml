@@ -1,6 +1,8 @@
+# Secrets (jira.token, db.user, db.password) are injected from the environment /
+# .env (JIRA_TOKEN, DB_USER, DB_PASSWORD) and intentionally omitted here.
+# See root .env.example.
 jira:
   baseUrl: "https://jira.mariadb.org"
-  token: ""
   maxResults: 50
   minRetryDelay: 1000
   maxRetryDelay: 60000
@@ -9,14 +11,16 @@ jira:
 db:
   host: "postgres"
   port: 5432
-  user: "pguser"
-  password: "pgpassword"
   dbname: "jira_tracker"
 
 app:
   logLevel: "info"
 
-# Connector has no Prometheus metrics; pprof is its only diagnostic endpoint.
+# Diagnostic endpoints: Prometheus metrics (/metrics) and net/http/pprof.
+metrics:
+  enabled: true
+  addr: ":9090"
+
 pprof:
   enabled: true
   addr: ":6060"
