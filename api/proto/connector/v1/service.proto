@@ -2,9 +2,17 @@ syntax = "proto3";
 
 package connector.v1;
 
+enum SyncState {
+  SYNC_STATE_UNSPECIFIED = 0;
+  SYNC_STATE_RUNNING     = 1;
+  SYNC_STATE_COMPLETED   = 2;
+  SYNC_STATE_FAILED      = 3;
+}
+
 service ConnectorService {
   rpc GetAvailableProjects(GetAvailableProjectsRequest) returns (GetAvailableProjectsResponse);
   rpc DownloadProject(DownloadProjectRequest) returns (DownloadProjectResponse);
+  rpc GetSyncStatus(GetSyncStatusRequest) returns (GetSyncStatusResponse);
 }
 
 message GetAvailableProjectsRequest {
@@ -14,9 +22,10 @@ message GetAvailableProjectsRequest {
 }
 
 message JiraProject {
-  string key = 1;
-  string title = 2;
-  string self = 3;
+  string id = 1;
+  string key = 2;
+  string title = 3;
+  string self = 4;
 }
 
 message GetAvailableProjectsResponse {
@@ -30,7 +39,21 @@ message DownloadProjectRequest {
 }
 
 message DownloadProjectResponse {
+  string project_id = 1;
+  string sync_id = 2;
+  string status  = 3;
+  string message = 4;
+}
+
+message GetSyncStatusRequest {
   string sync_id = 1;
-  string status = 2;
-  string message = 3;
+}
+
+message GetSyncStatusResponse {
+  string    sync_id     = 1;
+  SyncState state       = 2;
+  uint32    processed   = 3;
+  uint32    total       = 4;
+  string    error       = 5;
+  string    project_key = 6;
 }

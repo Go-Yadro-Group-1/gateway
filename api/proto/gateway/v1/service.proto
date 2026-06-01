@@ -36,6 +36,10 @@ service ConnectorService {
       body: "*"
     };
   }
+
+  rpc GetSyncStatus(GetSyncStatusRequest) returns (GetSyncStatusResponse) {
+    option (google.api.http) = {get: "/api/v1/connector/sync/{sync_id}/status"};
+  }
 }
 
 // AnalyticsService — analytics via Analyzer service.
@@ -59,6 +63,13 @@ service AnalyticsService {
 // ─────────────────────────────────────────────
 // Enums
 // ─────────────────────────────────────────────
+
+enum SyncState {
+  SYNC_STATE_UNSPECIFIED = 0;
+  SYNC_STATE_RUNNING     = 1;
+  SYNC_STATE_COMPLETED   = 2;
+  SYNC_STATE_FAILED      = 3;
+}
 
 enum ChartType {
   CHART_TYPE_UNSPECIFIED          = 0;
@@ -84,6 +95,9 @@ message ProjectSummary {
 // ProjectStats — aggregated project statistics.
 // Fields mirror repository.ProjectStats in the analyzer service.
 message ProjectStats {
+  reserved 8; // was total_duration_closed; replaced by avg_duration_closed
+  reserved "total_duration_closed";
+
   int64  project_id              = 1;
   int32  count_total             = 2;
   int32  count_open              = 3;
@@ -91,8 +105,8 @@ message ProjectStats {
   int32  count_reopened          = 5;
   int32  count_resolved          = 6;
   int32  count_in_progress       = 7;
-  int32  total_duration_closed   = 8; // Total closed duration in days
   int32  count_created_last_week = 9;
+  float  avg_duration_closed     = 10; // Average closure duration per issue, hours
 }
 
 // JiraProject — project from Jira with a flag indicating whether it is loaded into the database.
@@ -152,6 +166,21 @@ message SyncProjectRequest {
 message SyncProjectResponse {
   string project_key = 1;
   string message     = 2;
+  string sync_id     = 3;
+  string status      = 4;
+}
+
+message GetSyncStatusRequest {
+  string sync_id = 1;
+}
+
+message GetSyncStatusResponse {
+  string    sync_id     = 1;
+  SyncState state       = 2;
+  uint32    processed   = 3;
+  uint32    total       = 4;
+  string    error       = 5;
+  string    project_key = 6;
 }
 
 // ─────────────────────────────────────────────

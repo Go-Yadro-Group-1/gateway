@@ -4,27 +4,45 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"sync"
+	"time"
 
 	analyzerv1 "github.com/Go-Yadro-Group-1/gateway/gen/grpc/analyzer/v1"
 	connectorv1 "github.com/Go-Yadro-Group-1/gateway/gen/grpc/connector/v1"
 	gatewayv1 "github.com/Go-Yadro-Group-1/gateway/gen/grpc/gateway/v1"
 )
 
+// projectsCacheTTL bounds how long the full Jira project list is reused before
+// it is re-fetched from the connector. The list is large and changes rarely,
+// while every catalog page/search request re-fetches it upstream (~2s), so a
+// short TTL removes the repeated full load without serving stale data for long.
+const projectsCacheTTL = 60 * time.Second
+
+type projectsCacheEntry struct {
+	projects  []*connectorv1.JiraProject
+	fetchedAt time.Time
+}
+
 type Server struct {
 	gatewayv1.UnimplementedConnectorServiceServer
 
 	connector connectorv1.ConnectorServiceClient
 	analyzer  analyzerv1.AnalyzerServiceClient
+
+	mu           sync.Mutex
+	projectCache map[string]projectsCacheEntry
 }
 
 func New(
 	connector connectorv1.ConnectorServiceClient,
 	analyzer analyzerv1.AnalyzerServiceClient,
 ) *Server {
+	//nolint:exhaustruct // mu keeps its zero value; embedded Unimplemented set explicitly
 	return &Server{
 		UnimplementedConnectorServiceServer: gatewayv1.UnimplementedConnectorServiceServer{},
 		connector:                           connector,
 		analyzer:                            analyzer,
+		projectCache:                        make(map[string]projectsCacheEntry),
 	}
 }
 
@@ -34,23 +52,18 @@ func (s *Server) ListJiraProjects(
 	ctx context.Context,
 	req *gatewayv1.ListJiraProjectsRequest,
 ) (*gatewayv1.ListJiraProjectsResponse, error) {
-	resp, err := s.connector.GetAvailableProjects(ctx, &connectorv1.GetAvailableProjectsRequest{
-		SearchQuery: req.GetSearch(),
-		Limit:       req.GetLimit(),
-		Page:        req.GetPage(),
-	})
+	// Connector's upstream Jira endpoint (/rest/api/2/project) is non-paginated
+	// and ignores startAt/maxResults, so it returns the full project list every
+	// time. Fetch it (cached) and slice here until connector grows real pagination.
+	upstream, err := s.availableProjects(ctx, req.GetSearch())
 	if err != nil {
-		return nil, fmt.Errorf("connector.GetAvailableProjects: %w", err)
+		return nil, err
 	}
 
 	// Build a set of project keys known to analyzer. A single call per request.
 	// On failure, degrade gracefully: all existence flags stay false.
 	knownKeys := s.fetchKnownKeys(ctx)
 
-	// Connector's upstream Jira endpoint (/rest/api/2/project) is non-paginated
-	// and ignores startAt/maxResults, so it returns the full project list every time.
-	// Slice it here until connector grows real pagination.
-	upstream := resp.GetProjects()
 	page, limit := normalizePaging(req.GetPage(), req.GetLimit())
 	start, end := pageBounds(int32(len(upstream)), page, limit) //nolint:gosec
 
@@ -88,6 +101,29 @@ func (s *Server) SyncProject(
 	return &gatewayv1.SyncProjectResponse{
 		ProjectKey: req.GetProjectKey(),
 		Message:    resp.GetMessage(),
+		SyncId:     resp.GetSyncId(),
+		Status:     resp.GetStatus(),
+	}, nil
+}
+
+func (s *Server) GetSyncStatus(
+	ctx context.Context,
+	req *gatewayv1.GetSyncStatusRequest,
+) (*gatewayv1.GetSyncStatusResponse, error) {
+	resp, err := s.connector.GetSyncStatus(ctx, &connectorv1.GetSyncStatusRequest{
+		SyncId: req.GetSyncId(),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("connector.GetSyncStatus: %w", err)
+	}
+
+	return &gatewayv1.GetSyncStatusResponse{
+		SyncId:     resp.GetSyncId(),
+		State:      gatewayv1.SyncState(resp.GetState()),
+		Processed:  resp.GetProcessed(),
+		Total:      resp.GetTotal(),
+		Error:      resp.GetError(),
+		ProjectKey: resp.GetProjectKey(),
 	}, nil
 }
 
@@ -111,6 +147,40 @@ func (s *Server) fetchKnownKeys(ctx context.Context) map[string]int64 {
 	}
 
 	return keys
+}
+
+// availableProjects returns the full upstream Jira project list for a search
+// query, served from a short-lived in-memory cache. The slow upstream call is
+// made outside the lock so concurrent requests don't serialize on it; the
+// existence flags layered on top (see fetchKnownKeys) are intentionally not
+// cached and stay fresh per request.
+func (s *Server) availableProjects(
+	ctx context.Context,
+	search string,
+) ([]*connectorv1.JiraProject, error) {
+	s.mu.Lock()
+	entry, ok := s.projectCache[search]
+	s.mu.Unlock()
+
+	if ok && time.Since(entry.fetchedAt) < projectsCacheTTL {
+		return entry.projects, nil
+	}
+
+	//nolint:exhaustruct // upstream ignores Limit/Page; only SearchQuery is meaningful here
+	resp, err := s.connector.GetAvailableProjects(ctx, &connectorv1.GetAvailableProjectsRequest{
+		SearchQuery: search,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("connector.GetAvailableProjects: %w", err)
+	}
+
+	projects := resp.GetProjects()
+
+	s.mu.Lock()
+	s.projectCache[search] = projectsCacheEntry{projects: projects, fetchedAt: time.Now()}
+	s.mu.Unlock()
+
+	return projects, nil
 }
 
 func normalizePaging(page, limit int32) (int32, int32) {

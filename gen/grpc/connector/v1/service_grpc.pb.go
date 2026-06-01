@@ -21,6 +21,7 @@ const _ = grpc.SupportPackageIsVersion8
 const (
 	ConnectorService_GetAvailableProjects_FullMethodName = "/connector.v1.ConnectorService/GetAvailableProjects"
 	ConnectorService_DownloadProject_FullMethodName      = "/connector.v1.ConnectorService/DownloadProject"
+	ConnectorService_GetSyncStatus_FullMethodName        = "/connector.v1.ConnectorService/GetSyncStatus"
 )
 
 // ConnectorServiceClient is the client API for ConnectorService service.
@@ -29,6 +30,7 @@ const (
 type ConnectorServiceClient interface {
 	GetAvailableProjects(ctx context.Context, in *GetAvailableProjectsRequest, opts ...grpc.CallOption) (*GetAvailableProjectsResponse, error)
 	DownloadProject(ctx context.Context, in *DownloadProjectRequest, opts ...grpc.CallOption) (*DownloadProjectResponse, error)
+	GetSyncStatus(ctx context.Context, in *GetSyncStatusRequest, opts ...grpc.CallOption) (*GetSyncStatusResponse, error)
 }
 
 type connectorServiceClient struct {
@@ -59,12 +61,23 @@ func (c *connectorServiceClient) DownloadProject(ctx context.Context, in *Downlo
 	return out, nil
 }
 
+func (c *connectorServiceClient) GetSyncStatus(ctx context.Context, in *GetSyncStatusRequest, opts ...grpc.CallOption) (*GetSyncStatusResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetSyncStatusResponse)
+	err := c.cc.Invoke(ctx, ConnectorService_GetSyncStatus_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ConnectorServiceServer is the server API for ConnectorService service.
 // All implementations must embed UnimplementedConnectorServiceServer
 // for forward compatibility
 type ConnectorServiceServer interface {
 	GetAvailableProjects(context.Context, *GetAvailableProjectsRequest) (*GetAvailableProjectsResponse, error)
 	DownloadProject(context.Context, *DownloadProjectRequest) (*DownloadProjectResponse, error)
+	GetSyncStatus(context.Context, *GetSyncStatusRequest) (*GetSyncStatusResponse, error)
 	mustEmbedUnimplementedConnectorServiceServer()
 }
 
@@ -77,6 +90,9 @@ func (UnimplementedConnectorServiceServer) GetAvailableProjects(context.Context,
 }
 func (UnimplementedConnectorServiceServer) DownloadProject(context.Context, *DownloadProjectRequest) (*DownloadProjectResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DownloadProject not implemented")
+}
+func (UnimplementedConnectorServiceServer) GetSyncStatus(context.Context, *GetSyncStatusRequest) (*GetSyncStatusResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetSyncStatus not implemented")
 }
 func (UnimplementedConnectorServiceServer) mustEmbedUnimplementedConnectorServiceServer() {}
 
@@ -127,6 +143,24 @@ func _ConnectorService_DownloadProject_Handler(srv interface{}, ctx context.Cont
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ConnectorService_GetSyncStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetSyncStatusRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ConnectorServiceServer).GetSyncStatus(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ConnectorService_GetSyncStatus_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ConnectorServiceServer).GetSyncStatus(ctx, req.(*GetSyncStatusRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ConnectorService_ServiceDesc is the grpc.ServiceDesc for ConnectorService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -141,6 +175,10 @@ var ConnectorService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DownloadProject",
 			Handler:    _ConnectorService_DownloadProject_Handler,
+		},
+		{
+			MethodName: "GetSyncStatus",
+			Handler:    _ConnectorService_GetSyncStatus_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

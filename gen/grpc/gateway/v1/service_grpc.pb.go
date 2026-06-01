@@ -189,6 +189,7 @@ var ProjectsService_ServiceDesc = grpc.ServiceDesc{
 const (
 	ConnectorService_ListJiraProjects_FullMethodName = "/gateway.v1.ConnectorService/ListJiraProjects"
 	ConnectorService_SyncProject_FullMethodName      = "/gateway.v1.ConnectorService/SyncProject"
+	ConnectorService_GetSyncStatus_FullMethodName    = "/gateway.v1.ConnectorService/GetSyncStatus"
 )
 
 // ConnectorServiceClient is the client API for ConnectorService service.
@@ -197,6 +198,7 @@ const (
 type ConnectorServiceClient interface {
 	ListJiraProjects(ctx context.Context, in *ListJiraProjectsRequest, opts ...grpc.CallOption) (*ListJiraProjectsResponse, error)
 	SyncProject(ctx context.Context, in *SyncProjectRequest, opts ...grpc.CallOption) (*SyncProjectResponse, error)
+	GetSyncStatus(ctx context.Context, in *GetSyncStatusRequest, opts ...grpc.CallOption) (*GetSyncStatusResponse, error)
 }
 
 type connectorServiceClient struct {
@@ -227,12 +229,23 @@ func (c *connectorServiceClient) SyncProject(ctx context.Context, in *SyncProjec
 	return out, nil
 }
 
+func (c *connectorServiceClient) GetSyncStatus(ctx context.Context, in *GetSyncStatusRequest, opts ...grpc.CallOption) (*GetSyncStatusResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetSyncStatusResponse)
+	err := c.cc.Invoke(ctx, ConnectorService_GetSyncStatus_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ConnectorServiceServer is the server API for ConnectorService service.
 // All implementations must embed UnimplementedConnectorServiceServer
 // for forward compatibility
 type ConnectorServiceServer interface {
 	ListJiraProjects(context.Context, *ListJiraProjectsRequest) (*ListJiraProjectsResponse, error)
 	SyncProject(context.Context, *SyncProjectRequest) (*SyncProjectResponse, error)
+	GetSyncStatus(context.Context, *GetSyncStatusRequest) (*GetSyncStatusResponse, error)
 	mustEmbedUnimplementedConnectorServiceServer()
 }
 
@@ -245,6 +258,9 @@ func (UnimplementedConnectorServiceServer) ListJiraProjects(context.Context, *Li
 }
 func (UnimplementedConnectorServiceServer) SyncProject(context.Context, *SyncProjectRequest) (*SyncProjectResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SyncProject not implemented")
+}
+func (UnimplementedConnectorServiceServer) GetSyncStatus(context.Context, *GetSyncStatusRequest) (*GetSyncStatusResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetSyncStatus not implemented")
 }
 func (UnimplementedConnectorServiceServer) mustEmbedUnimplementedConnectorServiceServer() {}
 
@@ -295,6 +311,24 @@ func _ConnectorService_SyncProject_Handler(srv interface{}, ctx context.Context,
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ConnectorService_GetSyncStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetSyncStatusRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ConnectorServiceServer).GetSyncStatus(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ConnectorService_GetSyncStatus_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ConnectorServiceServer).GetSyncStatus(ctx, req.(*GetSyncStatusRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ConnectorService_ServiceDesc is the grpc.ServiceDesc for ConnectorService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -309,6 +343,10 @@ var ConnectorService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SyncProject",
 			Handler:    _ConnectorService_SyncProject_Handler,
+		},
+		{
+			MethodName: "GetSyncStatus",
+			Handler:    _ConnectorService_GetSyncStatus_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
