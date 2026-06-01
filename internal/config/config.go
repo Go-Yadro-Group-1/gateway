@@ -27,6 +27,30 @@ type AppConfig struct {
 	LogLevel string `mapstructure:"log_level" validate:"required,oneof=debug info warn error"`
 }
 
+// BindEnvs binds every overridable config key to an environment variable so the
+// gateway can be configured entirely from the environment (.env) — useful for
+// deploy targets that only accept env vars (e.g. Timeweb App Platform). Explicit
+// BindEnv is required because viper's AutomaticEnv does not populate nested keys
+// during Unmarshal when the key is absent from the config file.
+func BindEnvs() error {
+	binds := map[string]string{
+		"http.host":         "HTTP_HOST",
+		"http.port":         "HTTP_PORT",
+		"analyzer.address":  "ANALYZER_ADDRESS",
+		"connector.address": "CONNECTOR_ADDRESS",
+		"app.log_level":     "LOG_LEVEL",
+	}
+
+	for key, env := range binds {
+		err := viper.BindEnv(key, env)
+		if err != nil {
+			return fmt.Errorf("bind env %s: %w", env, err)
+		}
+	}
+
+	return nil
+}
+
 func LoadConfig() (*Config, error) {
 	var cfg Config
 
